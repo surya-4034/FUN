@@ -1,0 +1,156 @@
+<!--
+To run this program steps:
+step 1:{on Terminal/CMD} run: python -m http.server 8000
+step 2:{on Browser} run: http://localhost:8000
+-->
+
+<!-- By IFrame API-->
+<!--playlists-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube Multiple Playlists</title>
+  <style>
+    body {
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      padding: 40px 0;
+      margin: 0;
+      color: white;
+      font-family: sans-serif;
+    }
+
+    #players {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); /* 5 playlists per row */
+      gap: 20px;
+      width: 95%;
+      max-width: 1600px;
+    }
+
+    #players h1 {
+      grid-column: 1 / -1; /* Span all 5 columns */
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2rem;
+      color: #facc15; /* Optional: yellow heading */
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+    }
+
+    .player-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .player-container {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      #players {
+        grid-template-columns: repeat(3, 1fr); /* 3 per row on medium screens */
+      }
+    }
+
+    @media (max-width: 800px) {
+      #players {
+        grid-template-columns: repeat(2, 1fr); /* 2 per row on smaller screens */
+      }
+    }
+
+    @media (max-width: 500px) {
+      #players {
+        grid-template-columns: 1fr; /* 1 per row on mobile */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="players">
+    <!-- Page heading in the grid -->
+   <h1 style="display:flex; align-items:center; justify-content:center; gap:10px; color:#facc15; text-shadow:2px 2px 5px rgba(0,0,0,0.7);">
+  <!-- YouTube play button logo SVG -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
+    <path fill="#FF0000" d="M23.5 6.2a2.85 2.85 0 0 0-2-2C19.2 3.8 12 3.8 12 3.8s-7.2 0-9.5.4a2.85 2.85 0 0 0-2 2A29.1 29.1 0 0 0 0 12a29.1 29.1 0 0 0 .5 5.8 2.85 2.85 0 0 0 2 2c2.3.4 9.5.4 9.5.4s7.2 0 9.5-.4a2.85 2.85 0 0 0 2-2A29.1 29.1 0 0 0 24 12a29.1 29.1 0 0 0-.5-5.8ZM9.5 16.5v-9l7 4.5-7 4.5Z"/>
+  </svg>
+  <u>UTube</u>
+</h1>
+
+
+  </div>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    // List of playlists to display and add new ones here
+    const playlists = [
+      { id: 'RD1_R8-iBj_J0', title: 'Bhojpuri 1' },
+      { id: 'RDdQw4w9WgXcQ', title: 'Hollywood' },
+      { id: 'RDydV_DOwndoI', title: 'Haryanvi' },
+      { id: 'RDb4keo972JYs', title: 'Bhojpuri 2' },
+      { id: 'PLofx924n9X9uU6jYES29c7rgf0M9NbvnQ', title: 'FAVOURAITE PLAYLIST' },
+      { id: 'PLofx924n9X9tjhTdQ5LYK3TGquBLE1m_2', title: 'Normal songs' },
+      // ✅ Add more playlists here
+    ];
+
+    let players = [];
+
+    function onYouTubeIframeAPIReady() {
+      const container = document.getElementById('players');
+
+      playlists.forEach((pl, index) => {
+        // Create wrapper div
+        const wrapper = document.createElement('div');
+        wrapper.className = 'player-wrapper';
+
+        const heading = document.createElement('h2');
+        heading.innerText = pl.title;
+
+        const playerDiv = document.createElement('div');
+        playerDiv.id = 'player' + index;
+        playerDiv.className = 'player-container';
+
+        wrapper.appendChild(heading);
+        wrapper.appendChild(playerDiv);
+        container.appendChild(wrapper);
+
+        // Initialize YouTube player
+        const player = new YT.Player(playerDiv.id, {
+          playerVars: { listType: 'playlist', list: pl.id, controls: 1, rel: 0 },
+          events: { 'onStateChange': (event) => onPlayerStateChange(event, index) }
+        });
+
+        players.push(player);
+      });
+    }
+
+    function onPlayerStateChange(event, currentIndex) {
+      if (event.data == YT.PlayerState.PLAYING) {
+        // Pause all other players
+        players.forEach((p, i) => {
+          if (i !== currentIndex && p.getPlayerState() == YT.PlayerState.PLAYING) {
+            p.pauseVideo();
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
