@@ -10,3 +10,8 @@ To run :
    step 3:{on Browser} run: http://localhost:8000
 
 To add new playlist edit visit: "const playlist section"
+
+it will work on phone also steps :
+open repo ->setting->pages->choose main -> custom domain -> now search on 📱 phone by link provided by github on deploy (pages)section only.
+
+it also work while screen is turned off in Samsung a54 tested👍
