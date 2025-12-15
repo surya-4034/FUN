@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTube / UMusic</title>
+<style>
+body{ margin:0; font-family:Arial,sans-serif; background:#0f172a; color:#e5e7eb;}
+/* HEADER TOGGLE */
+header{
+  display:flex;
+  justify-content:right;
+  gap:10px;
+  padding:10px;
+  background:#020617;
+}
+header button{
+  padding:6px 14px;
+  cursor:pointer;
+  border:none;
+  background:#1e293b;
+  color:white;
+  border-radius:16px;
+}
+header button.active{
+  background:#facc15;
+  color:black;
+}
+/* SECTIONS */
+section{ display:none; padding:15px; }
+section.active{ display:block; }
+section h1{ text-align:center; margin-bottom:15px; }
+/* UTUBE */
+.utube-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+iframe{ width:100%; aspect-ratio:16/9; border-radius:8px; }
+/* UMUSIC */
+#umusicPlaylists{ display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
+.umusic-container{
+  background:#1e293b; padding:16px; border-radius:12px; min-width:220px; color:white;
+  background-size:cover; background-position:center; transition: background-image 0.3s ease-in-out;
+}
+.umusic-container h2{ margin:0 0 6px 0; text-shadow:1px 1px 4px black; }
+.umusic-controls button{
+  border-radius:12px; border:none; cursor:pointer; margin:4px; padding:6px 10px; opacity:0.3;
+}
+.umusic-controls button:hover{opacity:1;}
+.umusic-controls #progress{ width:100%; margin:6px 0; border-radius:6px; }
+.umusic-controls #title{ display:block; margin-bottom:6px; font-weight:bold; text-shadow:1px 1px 2px black;}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="btnUTube" class="active" onclick="showUTube()">UTube</button>
+  <button id="btnUMusic" onclick="showUMusic()">UMusic</button>
+</header>
+
+<section id="utube" class="active">
+  <h1>UTube</h1>
+  <div id="utubePlaylists" class="utube-grid"></div>
+</section>
+
+<section id="umusic">
+  <h1>UMusic</h1>
+  <div id="umusicPlaylists"></div>
+</section>
+
+<div id="music" style="width:0;height:0;"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+/* TOGGLE */
+function showUTube(){
+  utube.classList.add("active");
+  umusic.classList.remove("active");
+  btnUTube.classList.add("active");
+  btnUMusic.classList.remove("active");
+}
+function showUMusic(){
+  umusic.classList.add("active");
+  utube.classList.remove("active");
+  btnUMusic.classList.add("active");
+  btnUTube.classList.remove("active");
+}
+
+/* GLOBAL PLAYERS */
+const ALL={};
+let currentPlayingKey = null; // only one playlist plays at a time
+
+/* UTUBE */
+const UTUBE_PLAYLISTS = [
+  {id:"PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI", title:"Playlist 1"},
+  {id:"RD1_R8-iBj_J0", title:"Playlist 2"},
+  {id:"RDdQw4w9WgXcQ", title:"Playlist 3"},
+  {id:"PLofx924n9X9uU6jYES29c7rgf0M9NbvnQ", title:"Playlist 4"},
+  {id:"PLofx924n9X9tjhTdQ5LYK3TGquBLE1m_2", title:"Playlist 5"}
+];
+
+function loadUTubePlaylists(){
+  const container = document.getElementById("utubePlaylists");
+  UTUBE_PLAYLISTS.forEach((pl,index)=>{
+    const div = document.createElement("div");
+    const iframe = document.createElement("iframe");
+
+    iframe.id = "utubePlayer"+index; // unique id for JS API
+    iframe.src = `https://www.youtube.com/embed/videoseries?list=${pl.id}&enablejsapi=1`;
+    iframe.allow = "autoplay";
+    iframe.style.width="100%";
+    iframe.style.aspectRatio="16/9";
+    iframe.style.borderRadius="8px";
+    div.appendChild(iframe);
+    container.appendChild(div);
+
+    ALL["utube"+index] = new YT.Player(iframe.id, {
+      events:{
+        onStateChange: function(e){
+          if(e.data===YT.PlayerState.PLAYING){
+            if(currentPlayingKey && ALL[currentPlayingKey] && ALL[currentPlayingKey].getPlayerState()===YT.PlayerState.PLAYING){
+              ALL[currentPlayingKey].pauseVideo();
+            }
+            currentPlayingKey = "utube"+index;
+          }
+        }
+      }
+    });
+  });
+}
+
+/* UMUSIC */
+const UMUSIC_PLAYLISTS=[
+  {id:"RDAMVMXRTWUYSsbus",title:"My Songs"},
+  {id:"RD1_R8-iBj_J0",title:"Bhojpuri"},
+  {id:"RDydV_DOwndoI",title:"Haryanvi"},
+  {id:"RDb4keo972JYs",title:"Bhojpuri 2"},
+  {id:"PLofx924n9X9uU6jYES29c7rgf0M9NbvnQ",title:"FAVOURITE"},
+  {id:"PLofx924n9X9tjhTdQ5LYK3TGquBLE1m_2",title:"Normal"}
+];
+
+function onYouTubeIframeAPIReady(){
+  loadUTubePlaylists();
+  loadAllUMusic();
+}
+
+function loadAllUMusic(){
+  const container=document.getElementById("umusicPlaylists");
+  UMUSIC_PLAYLISTS.forEach((pl,index)=>{
+    const plDiv=document.createElement("div");
+    plDiv.className="umusic-container";
+
+    const plTitle=document.createElement("h2");
+    plTitle.innerText=pl.title;
+    plDiv.appendChild(plTitle);
+
+    const playerDiv=document.createElement("div");
+    playerDiv.id="umusicPlayer"+index;
+    plDiv.appendChild(playerDiv);
+
+    const controlsDiv=document.createElement("div");
+    controlsDiv.className="umusic-controls";
+
+    const titleSpan=document.createElement("span");
+    titleSpan.id="title"+index;
+    titleSpan.innerText="No song";
+    controlsDiv.appendChild(titleSpan);
+
+    const progressInput=document.createElement("input");
+    progressInput.type="range"; progressInput.min=0; progressInput.max=100; progressInput.value=0;
+    progressInput.id="progress"+index; controlsDiv.appendChild(progressInput);
+
+    const btnBack10=document.createElement("button"); btnBack10.innerText="⏪ 10s"; btnBack10.onclick=()=>seek(index,-10);
+    const btnPlay=document.createElement("button"); btnPlay.innerText="▶ / ⏸"; btnPlay.onclick=()=>playPause(index);
+    const btnFwd10=document.createElement("button"); btnFwd10.innerText="10s ⏩"; btnFwd10.onclick=()=>seek(index,10);
+    const btnPrev=document.createElement("button"); btnPrev.innerText="⏮"; btnPrev.onclick=()=>prev(index);
+    const btnNext=document.createElement("button"); btnNext.innerText="⏭"; btnNext.onclick=()=>next(index);
+    controlsDiv.appendChild(btnBack10); controlsDiv.appendChild(btnPlay); controlsDiv.appendChild(btnFwd10); controlsDiv.appendChild(btnPrev); controlsDiv.appendChild(btnNext);
+
+    plDiv.appendChild(controlsDiv);
+    container.appendChild(plDiv);
+
+    ALL["umusic"+index] = new YT.Player(playerDiv.id,{
+      height:"0", width:"0",
+      playerVars:{listType:"playlist",list:pl.id,controls:0},
+      events:{
+        onReady: ()=>{
+          setInterval(()=>updateProgress(index),500);
+          updateBackground(index);
+        },
+        onStateChange: function(e){
+          if(e.data===YT.PlayerState.PLAYING){
+            if(currentPlayingKey && ALL[currentPlayingKey] && ALL[currentPlayingKey].getPlayerState()===YT.PlayerState.PLAYING){
+              ALL[currentPlayingKey].pauseVideo();
+            }
+            currentPlayingKey = "umusic"+index;
+            updateTitle(index);
+            updateBackground(index);
+          }
+        }
+      }
+    });
+
+    let userSeeking=false;
+    progressInput.oninput=()=>userSeeking=true;
+    progressInput.onchange=()=>{
+      const player=ALL["umusic"+index];
+      player.seekTo((progressInput.value/100)*player.getDuration(),true);
+      userSeeking=false;
+      updateBackground(index);
+    };
+  });
+}
+
+/* UMUSIC CONTROLS */
+function playPause(idx){ const player=ALL["umusic"+idx]; player.getPlayerState()===YT.PlayerState.PLAYING?player.pauseVideo():player.playVideo(); }
+function next(idx){ALL["umusic"+idx].nextVideo(); updateBackground(idx);}
+function prev(idx){ALL["umusic"+idx].previousVideo(); updateBackground(idx);}
+function seek(idx,sec){ const player=ALL["umusic"+idx]; player.seekTo(player.getCurrentTime()+sec,true); updateBackground(idx); }
+
+function updateProgress(idx){
+  const player = ALL["umusic"+idx];
+  const prog = document.getElementById("progress"+idx);
+  if(player.getDuration()>0 && !prog.dragging){
+    prog.value = (player.getCurrentTime()/player.getDuration())*100;
+  }
+}
+function updateTitle(idx){
+  const player = ALL["umusic"+idx];
+  const titleSpan = document.getElementById("title"+idx);
+  titleSpan.innerText = player.getVideoData().title || "Playing...";
+}
+function updateBackground(idx){
+  const player = ALL["umusic"+idx];
+  const vidId = player.getVideoData().video_id;
+  const plDiv = document.getElementById("umusicPlayer"+idx).parentElement;
+  if(vidId){ plDiv.style.backgroundImage = `url("https://img.youtube.com/vi/${vidId}/hqdefault.jpg")`; }
+}
+</script>
+</body>
+</html>
